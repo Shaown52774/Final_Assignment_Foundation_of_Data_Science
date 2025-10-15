@@ -5,7 +5,8 @@
 ## 👥 Team Members
 - Shaown Imtiaz – [Shaown52774]
 - Al-Amin Dhaly – [alamindhaly]
-
+- Md Shazid Rayhan - [Mdshazidrayhan]
+- Md Asif - [asif-hosain]
 ## 📋 Project Description
 This is a group assignment for the "Foundation of Data Science" module.
 
