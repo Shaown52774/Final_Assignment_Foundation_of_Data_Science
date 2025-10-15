@@ -1,3 +1,58 @@
+# 4. Feature engineering
+cols = merged.columns
+
+# 1. Rat presence indicator
+if all(c in cols for c in ['start_time','rat_period_start','rat_period_end']):
+    merged['rat_present'] = np.where(
+        (merged['start_time'] >= merged['rat_period_start']) &
+        (merged['start_time'] <= merged['rat_period_end']), 1, 0)
+else:
+    merged['rat_present'] = 0
+
+# 2. Time window since rat arrival
+if 'seconds_after_rat_arrival' in cols:
+    merged['recent_rat_window'] = pd.cut(
+        merged['seconds_after_rat_arrival'],
+        bins=[-np.inf, 30, 120, np.inf],
+        labels=['≤30s', '30–120s', '>120s']
+    )
+else:
+    merged['recent_rat_window'] = 'Unknown'
+
+# 3. Hours after sunset (if available)
+if 'hours_after_sunset' in cols:
+    merged['after_sunset_bin'] = pd.cut(
+        merged['hours_after_sunset'],
+        bins=[-np.inf, 2, 4, np.inf],
+        labels=['Early', 'Mid', 'Late']
+    )
+else:
+    merged['after_sunset_bin'] = 'Unknown'
+
+#5. Missing-value handling
+print("Missing values: ", merged.isna().sum())
+merged.fillna(merged.median(numeric_only=True), inplace=True)
+
+# 6. Descriptive stats and dispersion
+# Restrict calculations to numeric columns only
+num = merged.select_dtypes(include=['number'])
+desc = num.describe().T
+
+# Add dispersion and shape measures
+desc['skew'] = num.skew()
+desc['kurtosis'] = num.kurtosis()
+desc['cv'] = desc['std'] / desc['mean']
+
+print("\nDescriptive Summary with CV:\n",
+      desc[['mean', 'std', 'cv', 'skew', 'kurtosis']].round(3))
+
+# 7. Normality checks
+plt.figure(figsize=(6,4)); stats.probplot(merged['bat_landing_to_food'].dropna(), dist="norm", plot=plt)
+plt.title('Q–Q Plot for Bat Landing to Food'); plt.show()
+stat,p=stats.shapiro(merged['bat_landing_to_food'].dropna())
+print(f"Shapiro–Wilk normality test p={p:.4f}")
+merged['z_score_food']=(merged['bat_landing_to_food']-merged['bat_landing_to_food'].mean())/merged['bat_landing_to_food'].std()
+
 # 8. Visualisations
 sns.histplot(merged['bat_landing_to_food'],kde=True,color='teal')
 plt.title('Distribution of Bat Landing to Food'); plt.show()
